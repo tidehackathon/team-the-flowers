@@ -1,2 +1,2 @@
 # team-the-flowers
-# Filip Szpręgiel Bartłomiej Szykuła Jakub Walczak and last, but not least Piotr Targowski!!!
+# Filip Szpręgiel Bartłomiej Szykuła Jakub Walczak and best, but not beast Piotr Targowski!!!
