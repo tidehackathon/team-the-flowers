@@ -1,2 +1,19 @@
 # team-the-flowers
-# Filip Szpręgiel Bartłomiej Szykuła Jakub Walczak and best, but not beast Piotr Targowski!!!
+
+## **The Flowers**
+
+### - Filip Szpręgiel
+
+### - Bartłomiej Szykuła
+
+### - Piotr Targowski
+
+### - Jakub Walczak
+
+---
+
+## Challenge
+
+### Small UAV Visual Concept of Navigation
+
+---
