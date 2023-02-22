@@ -28,6 +28,8 @@ def main() -> None:
             # Try to open given file
             df = pd.read_csv(fpath)
             
+            df = df[::10]
+            
             # Create plot
             df.set_index(df.keys()[0]).plot(title=fpath)
             print('Loaded.')

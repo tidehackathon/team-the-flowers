@@ -6,7 +6,7 @@
 #include_next <math.h>
 #include_next <vector>
 
-#define GRAVITY 9.81
+#define GRAVITY 9.91
 
 double *compensateGravity(double *acc, double *q);
 

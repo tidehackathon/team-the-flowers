@@ -8,9 +8,18 @@ double *compensateGravity(double *acc, std::vector<double> q)
     g[2] = (q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3]) * GRAVITY;
 
     double *compensatedGravity = new double[3];
-    compensatedGravity[0] = acc[0] - g[0];
-    compensatedGravity[1] = acc[1] - g[1];
-    compensatedGravity[2] = acc[2] - g[2];
+    compensatedGravity[0] = acc[0] + g[0];
+    compensatedGravity[1] = acc[1] + g[1];
+    compensatedGravity[2] = acc[2] + g[2];
+
+    std::cerr << "q[0] = " << q[0] << std::endl;
+    std::cerr << "q[1] = " << q[1] << std::endl;
+    std::cerr << "q[2] = " << q[2] << std::endl;
+    std::cerr << "q[3] = " << q[3] << std::endl << std::endl;
+
+    std::cerr << "g[0] = " << g[0] << std::endl;
+    std::cerr << "g[1] = " << g[1] << std::endl;
+    std::cerr << "g[2] = " << g[2] << std::endl;
 
     return compensatedGravity;
 }

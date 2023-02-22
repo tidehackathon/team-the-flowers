@@ -8,19 +8,18 @@ class Calc:
         self.vel_prg = cfg.CALC_VEL_PRG # Velocity calculation program path
         self.pos_prg = cfg.CALC_POS_PRG # Position calculation program path
         
-        self.vel_log = cfg.CALC_VEL_LOG # Velocity calc program logfile
-        self.pos_log = cfg.CALC_VEL_LOG # Position calc program logfile
+        self.vel_log = open(cfg.CALC_VEL_LOG, 'w') # Velocity calc program logfile
+        self.pos_log = open(cfg.CALC_POS_LOG, 'w') # Position calc program logfile
 
         self.vel_csv_log = open(cfg.CALC_VEL_CSV_LOG, 'w')
         self.vel_csv_log.write('t,velX,velY,velZ,vel\n')
+        self.acc_csv_log = open(cfg.CALC_ACC_CSV_LOG, 'w')
+        self.acc_csv_log.write('t,accX,accY,accZ\n')
+        self.acc_cmp_csv_log = open(cfg.CALC_ACC_CMP_CSV_LOG, 'w')
+        self.acc_cmp_csv_log.write('t,accCmpX,accCmpY,accCmpZ\n')
         
+        self._prev_state = 1
         self._marker = 0
-        
-        # Logfiles clear
-        f = open(self.vel_log, 'w')
-        f.close()
-        f = open(self.pos_log, 'w')
-        f.close()
     
     '''
      Estimate UAV velocity with IMU data
@@ -48,6 +47,7 @@ class Calc:
                     str(act_acc_data["x"]),
                     str(act_acc_data["y"]),
                     str(act_acc_data["z"]),
+                    str(self._prev_state)
                 ]
         # Build command
         cmd = [self.vel_prg] + args
@@ -58,17 +58,37 @@ class Calc:
         result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         
         # Save stderr stream to log file
-        # sys.stderr.write(result.stderr.decode('utf-8'))
+        self.vel_log.write(f'{result.stderr.decode("utf-8")}\n')
+        
+        # print(f'Acc: [{act_acc_data["x"]}, {act_acc_data["y"]}, {act_acc_data["z"]}]')
+        
+        self.acc_csv_log.write(f'{self._marker},{act_acc_data["x"]},{act_acc_data["y"]},{act_acc_data["z"]}\n')
         
         if result.returncode == 0:
             res = result.stdout.decode('utf-8').split(',')
-            velx, vely, velz = res[0], res[1], res[2]
-            vel = res[3]
             
+            accCmpX, accCmpY, accCmpZ = res[0], res[1], res[2]
+            velx, vely, velz = res[3], res[4], res[5]
+            vel = res[6]
+            self._prev_state = int(res[7])
+            
+            self.acc_cmp_csv_log.write(f'{self._marker},{accCmpX},{accCmpY},{accCmpZ}\n')
             self.vel_csv_log.write(f'{self._marker},{velx},{vely},{velz},{vel}\n')
+            
+            # print(f'{result.returncode} : {res}')
             
             return vel
         
+        elif result.returncode == 1:
+            res = result.stdout.decode('utf-8').split(',')
+            
+            accCmpX, accCmpY, accCmpZ = res[0], res[1], res[2]
+            self._prev_state = int(res[3])
+            
+            self.acc_cmp_csv_log.write(f'{self._marker},{accCmpX},{accCmpY},{accCmpZ}\n')
+            
+            # print(f'{result.returncode} : {res}')
+            
         self._marker = self._marker + 1
         
         return None

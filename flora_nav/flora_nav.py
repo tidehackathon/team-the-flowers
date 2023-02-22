@@ -66,17 +66,16 @@ def main() -> None:
         prev_gyro_data  = gyro_data
         prev_acc_data   = acc_data
         prev_alt        = alt
-        prev_bearing    = bearing
         
-        if (imu_sensor._marker >= len(imu_sensor._acc_data)):
+        if (nav_sensor._marker >= len(nav_sensor._data) / 2):
             break
         
-        out = f'{round(((imu_sensor._marker / len(imu_sensor._acc_data)) * 100), 7)} %'
+        out = f'{round(((nav_sensor._marker / len(nav_sensor._data) / 2) * 100), 7)} %'
         print(f'Processing... {out}  ', end='\r')
         
         # time.sleep(REFRESH_RATE / 1000)
         
-    print('Processing... Done.', end='\r')
+    print('Processing... Done.')
         
         
 if __name__ == '__main__':

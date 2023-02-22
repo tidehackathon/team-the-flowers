@@ -25,3 +25,5 @@ CALC_POS_LOG = LOG_DIR + 'calc_pos.log'
 
 # CSV LOGS
 CALC_VEL_CSV_LOG = CALC_DATA_DIR + 'vel.csv'
+CALC_ACC_CSV_LOG = CALC_DATA_DIR + 'acc.csv'
+CALC_ACC_CMP_CSV_LOG = CALC_DATA_DIR + 'acc_cmp.csv'
