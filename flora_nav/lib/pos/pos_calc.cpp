@@ -149,7 +149,7 @@ int calculateNextStepCoordinates(TelemetricReading *telemetricReadings, long dou
     cerr << "LonDivider: " << longitudeDivider << endl;
 
     long double distance1 = reachedDistance / latitudeDivider;
-    long double distance2 = (reachedDistance / longitudeDivider) * 0.615;
+    long double distance2 = (reachedDistance / longitudeDivider) * 0.72;
 
     cerr << "Distance 1: " << distance1 << endl;
     cerr << "Distance 2: " << distance2 << endl;
@@ -175,6 +175,7 @@ int calculateNextStepCoordinates(TelemetricReading *telemetricReadings, long dou
 
     return 0;
 }
+
 
 int main(int argc, char **argv)
 {

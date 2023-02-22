@@ -102,27 +102,30 @@ def main():
         # Create command to run
         cmd = GPS_PRG + args
         # Run GPS calculation program with muted STDERR
-        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        
+        print(f'{(result.stderr).decode("utf-8")}', file=sys.stderr)
         
         # if no error occured
         if result.returncode == 0:
-            # Get result: (lat,lon)
-            res = result.stdout.decode('utf-8').split(',')
-            res[0], res[1] = round(float(res[0]), 7), round(float(res[1]), 7)
-            
-            '''
-            print(f'ARGS: {args}')
-            print(f'ORG:  {dataset2[0]}, {dataset2[1]}')
-            print(f'CAL:  {res[0]}, {res[1]}\n')
-            '''
-            
-            # Write results to output files
-            gpsFile.write(f'{dataset2[0]}, {dataset2[1]}\n')
-            calFile.write(f'{res[0]}, {res[1]}\n')
-            pltlatFile.write(f'{dataset2[5]},{dataset2[0]},{res[0]}\n')
-            pltlonFile.write(f'{dataset2[5]},{dataset2[1]},{res[1]}\n')
-            
-            error_occured = False
+            if i % 1 == 0:
+                # Get result: (lat,lon)
+                res = result.stdout.decode('utf-8').split(',')
+                res[0], res[1] = round(float(res[0]), 7), round(float(res[1]), 7)
+                
+                '''
+                print(f'ARGS: {args}')
+                print(f'ORG:  {dataset2[0]}, {dataset2[1]}')
+                print(f'CAL:  {res[0]}, {res[1]}\n')
+                '''
+                
+                # Write results to output files
+                gpsFile.write(f'{dataset2[0]}, {dataset2[1]}\n')
+                calFile.write(f'{res[0]}, {res[1]}\n')
+                pltlatFile.write(f'{dataset2[5]},{dataset2[0]},{res[0]}\n')
+                pltlonFile.write(f'{dataset2[5]},{dataset2[1]},{res[1]}\n')
+                
+                error_occured = False
         else:
             # if error occured during previous calculation
             if error_occured:

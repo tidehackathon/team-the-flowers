@@ -1,6 +1,8 @@
 import tkinter
 from tkintermapview import TkinterMapView
 
+ORG_DATAFILE = './data/out/data_org.txt'
+CAL_DATAFILE = './data/out/data_cal.txt'
 
 def Google_Maps_display() -> None:
     root_tk = tkinter.Tk()
@@ -16,10 +18,9 @@ def Google_Maps_display() -> None:
 
     # =========== our calculated data ===========================
 
-    # map_widget.set_tile_server(
-    #     "https://mt0.google.com/vt/lyrs=s&hl=en&x={x}&y={y}&z={z}&s=Ga", max_zoom=18)
+    # map_widget.set_tile_server("https://mt0.google.com/vt/lyrs=s&hl=en&x={x}&y={y}&z={z}&s=Ga", max_zoom=18)
     
-    data_from_list_our = loop_for_data("./data/out/data_org.txt")
+    data_from_list_our = loop_for_data(CAL_DATAFILE)
     map_widget.set_address(f"{data_from_list_our[0]}", marker=False)
     start_point_x, start_point_y = float(data_from_list_our[0].split(
         ', ')[0]), float(data_from_list_our[0].split(', ')[1])
@@ -28,14 +29,14 @@ def Google_Maps_display() -> None:
         x, y = float(row.split(', ')[0]), float(row.split(', ')[1])
 
         uv_path = map_widget.set_path([(start_point_x, start_point_y), (x, y)
-                                       ], color='yellow', width='5')
+                                       ], color='blue', width='7')
         uv_path.add_position(x, y)
         start_point_x = x
         start_point_y = y
 
     #  =========== original data ===========================
 
-    data_from_list = loop_for_data("./data/out/data_cal.txt")
+    data_from_list = loop_for_data(ORG_DATAFILE)
     map_widget.set_address(f"{data_from_list[0]}", marker=False)
     start_point_x, start_point_y = float(data_from_list[0].split(
         ', ')[0]), float(data_from_list[0].split(', ')[1])
