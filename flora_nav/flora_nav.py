@@ -22,7 +22,7 @@ def main() -> None:
     print('  * GPS position logfile : \tOK\n')
     
     str_ind = 4999      # start index
-    stp_ind = 13000     # stop index
+    stp_ind = 12000     # stop index
     i = str_ind
     
     print('UAV log data is being processed:')

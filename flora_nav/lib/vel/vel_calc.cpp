@@ -38,11 +38,8 @@ double compensateWindForce(double airVelocity, double w_speed, double w_directio
     if (alpha >= (drift + 270) * (-1) && alpha <= (drift + 270))
         alpha = 270;
 
-    /* *** Scalar Product *** */
-    double scalarProduct = std::abs(airVelocity * w_speed * cos(alpha));
-
     //  If UAV and Wind vectors are perpendicular
-    if (scalarProduct == 0 || alpha == 90 || alpha == 270)
+    if (alpha == 90 || alpha == 270)
     {
         std::cerr << std::endl << "=== Perpendicular ===" << std::endl;
         // There is no wind influence
@@ -73,7 +70,7 @@ double compensateWindForce(double airVelocity, double w_speed, double w_directio
 
     std::cerr << "== Another ==" << std::endl;
 
-    vectorProduct *= 1.25;
+    vectorProduct /= 2.5;
     return vectorProduct;
 }
 
