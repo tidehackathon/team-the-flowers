@@ -1,5 +1,3 @@
 .venv/
+.vscode/
 **/__pycache__/
-**/gps/data/
-**/mg.err
-**/java_template/

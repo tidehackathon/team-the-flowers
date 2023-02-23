@@ -6,23 +6,36 @@
 #define beta sqrt(3.0f / 4.0f) * gyroMeasError            // compute beta
 #define PI 2 * acos(0.0)
 
-double *filterUpdate(float w_x, float w_y, float w_z, float a_x, float a_y, float a_z, double SEq_1, double SEq_2, double SEq_3, double SEq_4)
+double * filterUpdate(double *gyro, double *acc, double *q)
 {
     // Local system variables
-    float norm;                                                           // vector norm
-    float SEqDot_omega_1, SEqDot_omega_2, SEqDot_omega_3, SEqDot_omega_4; // quaternion derrivative from gyroscopes elements
-    float f_1, f_2, f_3;                                                  // objective function elements
-    float J_11or24, J_12or23, J_13or22, J_14or21, J_32, J_33;             // objective function Jacobian elements
-    float SEqHatDot_1, SEqHatDot_2, SEqHatDot_3, SEqHatDot_4;             // estimated direction of the gyroscope error
+    double norm;                                                           // vector norm
+    double SEqDot_omega_1, SEqDot_omega_2, SEqDot_omega_3, SEqDot_omega_4; // quaternion derrivative from gyroscopes elements
+    double f_1, f_2, f_3;                                                  // objective function elements
+    double J_11or24, J_12or23, J_13or22, J_14or21, J_32, J_33;             // objective function Jacobian elements
+    double SEqHatDot_1, SEqHatDot_2, SEqHatDot_3, SEqHatDot_4;             // estimated direction of the gyroscope error
+
+    double SEq_1 = q[0];
+    double SEq_2 = q[1];
+    double SEq_3 = q[2];
+    double SEq_4 = q[3];
+
+    double a_x = acc[0];
+    double a_y = acc[1];
+    double a_z = acc[2];
+
+    double w_x = gyro[0];
+    double w_y = gyro[1];
+    double w_z = gyro[2];
 
     // Axulirary variables to avoid reapeated calcualtions
-    float halfSEq_1 = 0.5f * SEq_1;
-    float halfSEq_2 = 0.5f * SEq_2;
-    float halfSEq_3 = 0.5f * SEq_3;
-    float halfSEq_4 = 0.5f * SEq_4;
-    float twoSEq_1 = 2.0f * SEq_1;
-    float twoSEq_2 = 2.0f * SEq_2;
-    float twoSEq_3 = 2.0f * SEq_3;
+    double halfSEq_1 = 0.5f * SEq_1;
+    double halfSEq_2 = 0.5f * SEq_2;
+    double halfSEq_3 = 0.5f * SEq_3;
+    double halfSEq_4 = 0.5f * SEq_4;
+    double twoSEq_1 = 2.0f * SEq_1;
+    double twoSEq_2 = 2.0f * SEq_2;
+    double twoSEq_3 = 2.0f * SEq_3;
     
     // Normalise the accelerometer measurement
     norm = sqrt(a_x * a_x + a_y * a_y + a_z * a_z);
@@ -73,7 +86,6 @@ double *filterUpdate(float w_x, float w_y, float w_z, float a_x, float a_y, floa
     SEq_3 /= norm;
     SEq_4 /= norm;
 
-    double *q = (double *)malloc(4 * sizeof(double));
     q[0] = SEq_1;
     q[1] = SEq_2;
     q[2] = SEq_3;
@@ -87,18 +99,10 @@ double *filterUpdate(float w_x, float w_y, float w_z, float a_x, float a_y, floa
     double R33 = 2. * q[0] * q[0] - 1 + 2. * q[3] * q[3];
 
     double theta = -atan(R31 / sqrt(1 - R31 * R31));
-    double pitch = (theta * 180) / PI;
-
     double phi = atan2(R32, R33);
-    double roll = (phi * 180) / PI;
 
-    double *res = (double *)malloc(6 * sizeof(double));
-    res[0] = q[0];
-    res[1] = q[1];
-    res[2] = q[2];
-    res[3] = q[3];
-    res[4] = pitch;
-    res[5] = roll;
-
+    double *res = new double[2];
+    res[0] = (theta * 180) / PI;    // Pitch
+    res[1] = (phi * 180) / PI;      // Roll
     return res;
 }

@@ -1,115 +1,118 @@
 #include "vel_calc.hpp"
 
-double calculateVel(double prev_vel, double a)
+double calculateVel(double a)
 {
     return a * 0.1;
 }
 
 /*
-    ARGS:
+    Ostateczna formuła wygląda następująco:
+
+    prędkość UAV względem ziemi = 
+    
+    sqrt[(prędkość powietrzna UAV * cos(azymut - kierunek wiatru))^2 + (prędkość wiatru * sin(azymut - kierunek wiatru))^2]
+
+    Gdzie:
+
+    "sqrt" oznacza pierwiastek kwadratowy
+    "cos" oznacza funkcję cosinus
+    "sin" oznacza funkcję sinus
+    "azymut" oznacza kierunek, w którym porusza się UAV (w stopniach)
+    "kierunek wiatru" oznacza kierunek, z którego wieje wiatr (w stopniach)
+    "prędkość powietrzna UAV" oznacza prędkość, z jaką porusza się UAV względem powietrza (w metrach na sekundę)
+    "prędkość wiatru" oznacza prędkość, z jaką wieje wiatr (w metrach na sekundę)
+*/
+
+double compensateWindForce(double airVelocity, double w_speed, double w_direction, double bearing)
+{
+    // double alpha = 1 / sin((w_speed / airVelocity) * sin(w_direction - bearing));
+    // return sqrt(pow(2, airVelocity) + pow(2, w_speed) - (2 * airVelocity * w_speed * cos(bearing) - bearing));
+    // return std::abs(airVelocity * w_speed * cos(alpha)) / 4.5;
+
+    return sqrt(pow(2, airVelocity * cos(w_direction)) + pow(2, w_speed * sin(w_direction)));
+}
+
+/*
+    INPUT:
         1           2           3
-        prev_gx,    prev_gy,    prev_gz
+        gx,         gy,         gz
 
         4           5           6
-        prev_ax,    prev_ay,    prev_az
-
-        7           8           9
         ax,         ay,         az
 
-        10
-        prev_state
-
-        11          12          13          14
+        7           8           9           10
         q0          q1          q2          q3
 
-        15          16          17
-        prev_vx     prev_vy     prev_vz
+        11          12                      13
+        w_speed     w_direction             bearing
+
+    OUTPUT:
+        acc{0..2}  q{0..3}  vel{0..4}
 */
 int main(int argc, char **argv)
 {
-    /* Input parse */
-    double prev_gx = atof(argv[1]);
-    double prev_gy = atof(argv[2]);
-    double prev_gz = atof(argv[3]);
-    double prev_ax = atof(argv[4]);
-    double prev_ay = atof(argv[5]);
-    double prev_az = atof(argv[6]);
-    double ax = atof(argv[7]);
-    double ay = atof(argv[8]);
-    double az = atof(argv[9]);
-    int prev_state = atoi(argv[10]);
-    double q0 = atof(argv[11]);
-    double q1 = atof(argv[12]);
-    double q2 = atof(argv[13]);
-    double q3 = atof(argv[14]);
-    double prev_vx = atof(argv[15]);
-    double prev_vy = atof(argv[16]);
-    double prev_vz = atof(argv[17]);
+    /* *** Input parse *** */
+    //  Gyroscope data
+    double *gyro = new double[3];
+    gyro[0] = atof(argv[1]); // X
+    gyro[1] = atof(argv[2]); // Y
+    gyro[2] = atof(argv[3]); // Z
 
-    // Madgwick Filter
+    //  Accelerometer data
+    double *acc = new double[3];
+    acc[0] = atof(argv[4]); // X
+    acc[1] = atof(argv[5]); // Y
+    acc[2] = atof(argv[6]); // Z
+
+    //  Madgwick quaterion
+    double *q = new double[4];
+    q[0] = atof(argv[7]);
+    q[1] = atof(argv[8]);
+    q[2] = atof(argv[9]);
+    q[3] = atof(argv[10]);
+
+    double *wind = new double[2];
+    wind[0] = atof(argv[11]);   // wind speed
+    wind[1] = atof(argv[12]);   // wind direction
+
+    double bearing = atof(argv[13]);
+
+    /* *** Madgwick Filter *** */
     //  Input: gyro_data, acc_data
-    double *res = new double[6];
-    res = filterUpdate(prev_gx, prev_gy, prev_gz, prev_ax, prev_ay, prev_az, q0, q1, q2, q3);
+    double *res = new double[2];
+    res = filterUpdate(gyro, acc, q);
 
-    float *q = new float[4];
-    q[0] = res[0];
-    q[1] = res[1];
-    q[2] = res[2];
-    q[3] = res[3];
+    double pitch = res[0];
+    double roll = res[1];
 
-    // Gravity Compensation for previous acceleration
-    //  Input: prev_acc_data, madgwickFilter.getQuaternions()
-    //  Output: prev_compensatedGravity
-    double *prev_acc = new double[3];
-    prev_acc[0] = prev_ax;
-    prev_acc[1] = prev_ay;
-    prev_acc[2] = prev_az;
-
-    double *prev_compensatedGravity = new double[3];
-    compensateGravity(prev_acc, res[5], res[6], prev_compensatedGravity);
-
-    // Gravity Compensation
+    /* *** Gravity compensation *** */
     //  Input:  acc_data, madgwickFilter.getQuaternions()
     //  Output: compensatedGravity
-    double *acc = new double[3];
-    acc[0] = ax;
-    acc[1] = ay;
-    acc[2] = az;
+    double *accCmp = new double[3];
+    compensateGravity(acc, pitch, roll, accCmp);
+    if (std::isnan(accCmp[0]) || std::isnan(accCmp[1]) || std::isnan(accCmp[2]))
+        return 1;
 
-    double *compensatedGravity = new double[3];
-    compensateGravity(prev_acc, res[5], res[6], compensatedGravity);
-    if (std::isnan(compensatedGravity[0]) || std::isnan(compensatedGravity[1]) || std::isnan(compensatedGravity[2])){
-        std::cerr << "cmpGrav NaN" << std::endl;
-        std::cerr
-          << "-------------------------------------------------" << std::endl
-          << std::endl;
-        
-        return 2;
-    }
+    // Velocity calculation:
+    double *vel = new double[4];
+    //   component velocities
+    vel[0] = calculateVel(accCmp[0]);  // velocity by axis X
+    vel[1] = calculateVel(accCmp[1]);  // velocity by axis Y
+    vel[2] = calculateVel(accCmp[2]);  // velocity by axis Z
+    vel[3] = sqrt(pow(2, vel[0]) + pow(2, vel[1]) + pow(2, vel[2])); // integrated velocity
+    vel[3] *= 10; // integrated velocity : normalize
 
-    std::cout << compensatedGravity[0] << "," << compensatedGravity[1] << "," << compensatedGravity[2] << ",";
+    /* WIND INFLUENCE */
+    double velocity = compensateWindForce(vel[3], wind[0], wind[1], bearing);
+    // velocity /= 20;
 
-    // Velocity calculation of axis X, Y and Z
-    //  Calculation integrated velocity
-    double velocityX, velocityY, velocityZ, velocity;
-    velocityX = calculateVel(prev_vx, compensatedGravity[0]);
-    velocityY = calculateVel(prev_vy, compensatedGravity[1]);
-    velocityZ = calculateVel(prev_vz, compensatedGravity[2]);
-    velocity = sqrt(pow(2, velocityX) + pow(2, velocityY) + pow(2, velocityZ));
-    velocity *= 10;
+    if (std::isnan(vel[3]) || std::isnan(velocity))
+        return 1;
 
-    // Montion Detection
-    //  Input:  compensatedGravity, gyro_data
-    //  Output: montion detected or not : bool
-    MontionDetection *montionDetector = new MontionDetection();
-
-    double *prev_gyro = new double[3];
-    prev_gyro[0] = prev_gx;
-    prev_gyro[1] = prev_gy;
-    prev_gyro[2] = prev_gz;
-
+    // Results to STDOUT
+    std::cout << accCmp[0] << "," << accCmp[1] << "," << accCmp[2] << ",";
     std::cout << q[0] << "," << q[1] << "," << q[2] << "," << q[3] << ",";
-    std::cout << velocityX << "," << velocityY << "," << velocityZ << "," << velocity << "," << prev_state << std::endl;
-    
+    std::cout << vel[0] << "," << vel[1] << "," << vel[2] << "," << vel[3] << "," << velocity << std::endl;
+
     return 0;
 }

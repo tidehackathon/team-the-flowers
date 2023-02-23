@@ -19,6 +19,7 @@ class Navigator:
         # on-Board Sensors
         self._imu = sensors.imu.IMUSensor()
         self._nav = sensors.nav.NavSensor()
+        self._win = sensors.win.WindSensor()
         
         # on-Board Modules
         self._gps = modules.gps.GPSModule()
@@ -32,10 +33,9 @@ class Navigator:
         
         self._imu.update()
         self._nav.update()
+        self._win.update()
         self._gps.update()
-        
-        self._prev_gyro_data = self._imu.get_gyro_data()
-        self._prev_acc_data = self._imu.get_acc_data()
+
         self._prev_alt = self._imu.get_altitude()
         self._vel = 0.0
         self._i = 0
@@ -67,13 +67,11 @@ class Navigator:
         acc_data = self._imu.get_acc_data()
         alt = self._imu.get_altitude()
         bearing = self._nav.get_bearing()
+        wind_data = (self._win.get_wind_speed(), self._win.get_wind_direction())
         
         # Calculations
         #   * velocity
-        calc_vel = self._compute_module.estimate_velocity(prev_gyro_data=self._prev_gyro_data, 
-                                                          prev_acc_data=self._prev_acc_data, 
-                                                          act_acc_data=acc_data, 
-                                                          index=self._i)
+        calc_vel = self._compute_module.estimate_velocity(gyro_data=gyro_data, acc_data=acc_data, wind_data=wind_data, bearing=bearing, index=self._i)
         
         if calc_vel is not None:
             self._vel = calc_vel
@@ -89,10 +87,7 @@ class Navigator:
         if pos is not None:
             self._act_pos = pos
             
-        self._prev_gyro_data  = gyro_data
-        self._prev_acc_data   = acc_data
-        self._prev_alt        = alt
-        
+        self._prev_alt = alt
         self._i = self._i + 1
     
     def get_actual_gps_position(self) -> (tuple[float]):

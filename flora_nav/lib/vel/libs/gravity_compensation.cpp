@@ -38,21 +38,3 @@ void compensateGravity(double *acc, double pitch, double roll, double *compensat
     compensatedGravity[1] = acc[1] + GRAVITY * sin(roll) * cos(pitch);  // compensated acceleration of Y axis
     compensatedGravity[2] = acc[2] + GRAVITY * cos(roll) * sin(pitch);  // compensated acceleration of Z axis
 }
-
-
-void compensateGravity2(double *acc, float *q, double *compensatedGravity)
-{
-    // Wyznacz wektor przyspieszenia grawitacyjnego
-    double gx = 2 * (q[1] * q[3] - q[0] * q[2]) * GRAVITY;
-    double gy = 2 * (q[0] * q[1] + q[2] * q[3]) * GRAVITY;
-    double gz = (q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3]) * GRAVITY;
-
-    // Kompensuj przyspieszenie ziemskie z odczytów akcelerometru
-    compensatedGravity[0] = acc[0] - gx;
-    compensatedGravity[1] = acc[1] - gy;
-    compensatedGravity[2] = acc[2] - gz;
-
-    // Debugging info
-    std::cerr << "Quaternion: [" << q[0] << ", " << q[1] << ", " << q[2] << ", " << q[3] << "]" << std::endl;
-    std::cerr << "Gravity vector: [" << gx << ", " << gy << ", " << gz << "]" << std::endl;
-}
