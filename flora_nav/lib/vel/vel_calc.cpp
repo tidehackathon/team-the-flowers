@@ -5,31 +5,76 @@ double calculateVel(double a)
     return a * 0.1;
 }
 
-/*
-    Ostateczna formuła wygląda następująco:
-
-    prędkość UAV względem ziemi = 
-    
-    sqrt[(prędkość powietrzna UAV * cos(azymut - kierunek wiatru))^2 + (prędkość wiatru * sin(azymut - kierunek wiatru))^2]
-
-    Gdzie:
-
-    "sqrt" oznacza pierwiastek kwadratowy
-    "cos" oznacza funkcję cosinus
-    "sin" oznacza funkcję sinus
-    "azymut" oznacza kierunek, w którym porusza się UAV (w stopniach)
-    "kierunek wiatru" oznacza kierunek, z którego wieje wiatr (w stopniach)
-    "prędkość powietrzna UAV" oznacza prędkość, z jaką porusza się UAV względem powietrza (w metrach na sekundę)
-    "prędkość wiatru" oznacza prędkość, z jaką wieje wiatr (w metrach na sekundę)
-*/
-
 double compensateWindForce(double airVelocity, double w_speed, double w_direction, double bearing)
 {
     // double alpha = 1 / sin((w_speed / airVelocity) * sin(w_direction - bearing));
-    // return sqrt(pow(2, airVelocity) + pow(2, w_speed) - (2 * airVelocity * w_speed * cos(bearing) - bearing));
-    // return std::abs(airVelocity * w_speed * cos(alpha)) / 4.5;
+    // return sqrt(pow(2, airVelocity) + pow(2, w_speed) - (2 * airVelocity * w_speed * cos(bearing) - w_direction + alpha + 90));
+    // return sqrt(pow(2, airVelocity * cos(w_direction)) + pow(2, w_speed * sin(w_direction)));
 
-    return sqrt(pow(2, airVelocity * cos(w_direction)) + pow(2, w_speed * sin(w_direction)));
+    /* *** Angles normalization *** */
+    while(bearing < 0)
+        bearing += 360;
+
+    while(w_direction < 0)
+        w_direction += 360;
+
+    /* *** Angle between bearing and wind direction *** */
+    double alpha = w_direction - 90 - bearing;
+
+    while(alpha < 0)
+        alpha += 360;
+
+    /* *** Alpha tolerance to increase possibility of recognition perpedicular and parallel vectors *** */
+    int drift = 10; // [degrees]
+    if (alpha >= (360 - drift) * (-1) && alpha <= drift)
+        alpha = 0;
+
+    if (alpha >= (drift + 90) * (-1) && alpha <= (drift + 90))
+        alpha = 90;
+
+    if (alpha >= (drift + 180) * (-1) && alpha <= (drift + 180))
+        alpha = 180;
+
+    if (alpha >= (drift + 270) * (-1) && alpha <= (drift + 270))
+        alpha = 270;
+
+    /* *** Scalar Product *** */
+    double scalarProduct = std::abs(airVelocity * w_speed * cos(alpha));
+
+    //  If UAV and Wind vectors are perpendicular
+    if (scalarProduct == 0 || alpha == 90 || alpha == 270)
+    {
+        std::cerr << std::endl << "=== Perpendicular ===" << std::endl;
+        // There is no wind influence
+        return airVelocity;
+    }
+
+    /* *** Vector Product *** */
+    double vectorProduct = std::abs(airVelocity * w_speed * sin(alpha));
+
+    //  If UAV and Wind vectors are parallel
+    if (vectorProduct == 0 || alpha == 0 || alpha == 180)
+    {
+        std::cerr << std::endl << "=== Parallel ===:    ";
+        //  If vectors' directions are opposite
+        if(std::round(alpha) == 180)
+        {
+            std::cerr << "Opposite";
+
+            return (((airVelocity + w_speed) / 2) * 1.25);
+        }
+        //  If vectors' directions match
+        else if (std::round(alpha) == 0) {
+            std::cerr << "Match";
+            return (((airVelocity - w_speed) / 2) * 1.25);
+        }
+        std::cerr << std::endl;
+    }
+
+    std::cerr << "== Another ==" << std::endl;
+
+    vectorProduct *= 1.25;
+    return vectorProduct;
 }
 
 /*
@@ -104,7 +149,6 @@ int main(int argc, char **argv)
 
     /* WIND INFLUENCE */
     double velocity = compensateWindForce(vel[3], wind[0], wind[1], bearing);
-    // velocity /= 20;
 
     if (std::isnan(vel[3]) || std::isnan(velocity))
         return 1;

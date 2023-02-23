@@ -43,10 +43,7 @@ def main() -> None:
 
 def clean() -> None:
     print('\nCleaning...')
-    try:
-        del navigator
-    except Exception:
-        pass
+    del navigator
     print('  * Cleaned.\n')
 
 if __name__ == '__main__':

@@ -35,18 +35,7 @@ class ComputeModule:
     
     '''
      Estimate UAV velocity with IMU data
-     params:
-      - gyroscope data
-      - accelerometer data
-      - previous velocity
-     Returns estimated actual velocity value as a float value on success or None on errors
-     
-             1           2           3
-        prev_gx,    prev_gy,    prev_gz
-        4           5           6
-        prev_ax,    prev_ay,    prev_az
-        7           8           9
-        ax,         ay,         az
+        Returns estimated actual velocity value as a float value on success or None on errors
     '''
     def estimate_velocity(self, gyro_data : dict, acc_data : dict, wind_data : tuple, bearing : float, index : int) -> float | None:
         # Build program arguments

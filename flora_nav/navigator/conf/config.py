@@ -1,5 +1,5 @@
 # DIRECTORIES
-WORKDIR = 'D:\\PROJECTS\\Projects_Coding\\NATO_TIDE_2023\\team-the-flowers\\flora_nav\\'
+WORKDIR = '.\\'
 BIN_DIR = WORKDIR + 'bin\\'
 LOG_DIR = WORKDIR + 'log\\'
 DATA_DIR = WORKDIR + 'data\\'
