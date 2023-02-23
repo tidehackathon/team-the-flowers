@@ -1,36 +1,29 @@
-#include <iostream>
-#include <stdint.h>
-#include <cstdint>
-#include <math.h>
-#include <vector>
-
 #include "vel_calc.hpp"
 
-double integrate(double x1, double x2, double y1, double y2)
+double calculateVel(double prev_vel, double a)
 {
-    double value;
-    value = (y1 + y2) * (x2 - x1) * 0.5;
-    return value;
-}
-
-double linearFunc(int *x, double *y, double value)
-{
-    double a = (y[1] - y[0]) / (x[1] - x[0]);
-    double b = y[0] - a * x[0];
-
-    return (a * value + b);
+    return a * 0.1;
 }
 
 /*
-    INPUT:
+    ARGS:
         1           2           3
         prev_gx,    prev_gy,    prev_gz
+
         4           5           6
         prev_ax,    prev_ay,    prev_az
+
         7           8           9
         ax,         ay,         az
+
         10
         prev_state
+
+        11          12          13          14
+        q0          q1          q2          q3
+
+        15          16          17
+        prev_vx     prev_vy     prev_vz
 */
 int main(int argc, char **argv)
 {
@@ -45,16 +38,24 @@ int main(int argc, char **argv)
     double ay = atof(argv[8]);
     double az = atof(argv[9]);
     int prev_state = atoi(argv[10]);
+    double q0 = atof(argv[11]);
+    double q1 = atof(argv[12]);
+    double q2 = atof(argv[13]);
+    double q3 = atof(argv[14]);
+    double prev_vx = atof(argv[15]);
+    double prev_vy = atof(argv[16]);
+    double prev_vz = atof(argv[17]);
 
     // Madgwick Filter
     //  Input: gyro_data, acc_data
-    MagdwickFilter *filter = new MagdwickFilter();
+    double *res = new double[6];
+    res = filterUpdate(prev_gx, prev_gy, prev_gz, prev_ax, prev_ay, prev_az, q0, q1, q2, q3);
 
-    filter->filterUpdate(prev_ax, prev_ay, prev_az, prev_gx, prev_gy, prev_gz);
-
-    double yawAngle = filter->getYaw();
-    double pitchAngle = filter->getPitch();
-    double rollAngle = filter->getRoll();
+    float *q = new float[4];
+    q[0] = res[0];
+    q[1] = res[1];
+    q[2] = res[2];
+    q[3] = res[3];
 
     // Gravity Compensation for previous acceleration
     //  Input: prev_acc_data, madgwickFilter.getQuaternions()
@@ -64,7 +65,8 @@ int main(int argc, char **argv)
     prev_acc[1] = prev_ay;
     prev_acc[2] = prev_az;
 
-    double *prev_compensatedGravity = compensateGravity(prev_acc, filter->getQuaternions());
+    double *prev_compensatedGravity = new double[3];
+    compensateGravity(prev_acc, res[5], res[6], prev_compensatedGravity);
 
     // Gravity Compensation
     //  Input:  acc_data, madgwickFilter.getQuaternions()
@@ -74,16 +76,27 @@ int main(int argc, char **argv)
     acc[1] = ay;
     acc[2] = az;
 
-    double *compensatedGravity = compensateGravity(acc, filter->getQuaternions());
+    double *compensatedGravity = new double[3];
+    compensateGravity(prev_acc, res[5], res[6], compensatedGravity);
     if (std::isnan(compensatedGravity[0]) || std::isnan(compensatedGravity[1]) || std::isnan(compensatedGravity[2])){
+        std::cerr << "cmpGrav NaN" << std::endl;
+        std::cerr
+          << "-------------------------------------------------" << std::endl
+          << std::endl;
+        
         return 2;
     }
 
     std::cout << compensatedGravity[0] << "," << compensatedGravity[1] << "," << compensatedGravity[2] << ",";
 
+    // Velocity calculation of axis X, Y and Z
+    //  Calculation integrated velocity
     double velocityX, velocityY, velocityZ, velocity;
-
-    
+    velocityX = calculateVel(prev_vx, compensatedGravity[0]);
+    velocityY = calculateVel(prev_vy, compensatedGravity[1]);
+    velocityZ = calculateVel(prev_vz, compensatedGravity[2]);
+    velocity = sqrt(pow(2, velocityX) + pow(2, velocityY) + pow(2, velocityZ));
+    velocity *= 10;
 
     // Montion Detection
     //  Input:  compensatedGravity, gyro_data
@@ -95,64 +108,8 @@ int main(int argc, char **argv)
     prev_gyro[1] = prev_gy;
     prev_gyro[2] = prev_gz;
 
-    bool d = montionDetector->zeroVelocityUpdate(prev_compensatedGravity, prev_gyro);
-    if (d)
-    {
-        std::cerr << "1" << std::endl;
-
-        velocityX = integrate(0, 0.1, prev_compensatedGravity[0], compensatedGravity[0]);
-        velocityY = integrate(0, 0.1, prev_compensatedGravity[1], compensatedGravity[1]);
-        velocityZ = integrate(0, 0.1, prev_compensatedGravity[2], compensatedGravity[2]);
-        
-        if(prev_state == 0)
-        {
-            std::cerr << "-------------------------------------------------" << std::endl
-                      << std::endl;
-
-            velocity = sqrt(pow(2, velocityX) + pow(2, velocityY) + pow(2, velocityZ));
-
-            if (std::isnan(velocityX) || std::isnan(velocityY) || std::isnan(velocityZ) || std::isnan(velocity))
-                return 2;
-
-            prev_state = 1;
-
-            std::cout << velocityX << "," << velocityY << "," << velocityZ << "," << velocity << "," << prev_state << std::endl;
-
-            return 0;
-        }
-        prev_state = 1;
-    }
-    else
-    {
-        std::cerr << "0" << std::endl;
-        
-        velocityX = integrate(0, 0.1, prev_compensatedGravity[0], compensatedGravity[0]);
-        velocityY = integrate(0, 0.1, prev_compensatedGravity[1], compensatedGravity[1]);
-        velocityZ = integrate(0, 0.1, prev_compensatedGravity[2], compensatedGravity[2]);
-        
-        if(prev_state == 1)
-        {
-            std::cerr << "-------------------------------------------------" << std::endl
-                      << std::endl;
-
-            velocity = sqrt(pow(2, velocityX) + pow(2, velocityY) + pow(2, velocityZ));
-
-            if (std::isnan(velocityX) || std::isnan(velocityY) || std::isnan(velocityZ) || std::isnan(velocity))
-                return 2;
-
-            prev_state = 0;
-            
-            std::cout << velocityX << "," << velocityY << "," << velocityZ << "," << velocity << "," << prev_state << std::endl;
-
-            return 0;
-        }
-        prev_state = 0;
-    }
-
-    std::cerr << "-------------------------------------------------" << std::endl
-              << std::endl;
-
-    std::cout << prev_state << "," << d << std::endl;
-
-    return 1;
+    std::cout << q[0] << "," << q[1] << "," << q[2] << "," << q[3] << ",";
+    std::cout << velocityX << "," << velocityY << "," << velocityZ << "," << velocity << "," << prev_state << std::endl;
+    
+    return 0;
 }

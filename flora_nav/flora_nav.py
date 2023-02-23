@@ -1,83 +1,73 @@
 import sys
-import time
 
-import pymodules.calc.calc as calc
-import pymodules.sensors.gps as gps
-import pymodules.sensors.imu as imu
-import pymodules.sensors.nav as nav
-
-REFRESH_RATE = 100  # [ms]
-
-def get_initial_pos() -> tuple[float]:
-    while True:
-        if gps_sensor.is_online():
-            return gps_sensor.get_position()
-
+import navigator.conf.config as cfg
+from navigator.navigator import Navigator
 
 def init() -> None:
-    # Sensors handlers
-    global imu_sensor, gps_sensor, nav_sensor
-    imu_sensor = imu.IMU()
-    gps_sensor = gps.GPS()
-    nav_sensor = nav.NAV()
-
-    # Calculation module handler
-    global calc_module    
-    calc_module = calc.Calc()
+    # Navigator module
+    global navigator
+    
+    print('Navigator module : \t\tInit...')
+    navigator = Navigator(cfg.GPS_ALWAYS_OFFLINE, cfg.GPS_CHECK_INTERVAL)
+    print('  * Navigator module : \t\tOK')
 
 def main() -> None:
-    imu_sensor.update()
-    gps_sensor.update()
-    nav_sensor.update()
+    # GPS position logfile to future track visualization
+    print('GPS position logfile : \t\tInit...')
+    pos_logfile = open(cfg.CALC_POS_CSV, 'w')
     
-    act_pos = get_initial_pos()
+    # GPS position (latitude, longitude)
+    position = navigator.get_actual_gps_position()
+    pos_logfile.write(f'{position[0]}, {position[1]}\n')
+    print('  * GPS position logfile : \tOK\n')
     
-    first = True
+    str_ind = 4999      # start index
+    stp_ind = 13000     # stop index
+    i = str_ind
     
+    print('UAV log data is being processed:')
     while True:
-        # Sensors update
-        imu_sensor.update()
-        gps_sensor.update()
-        nav_sensor.update()
+        navigator.update()
+        position = navigator.get_actual_gps_position()
+        pos_logfile.write(f'{position[0]}, {position[1]}\n')
         
-        if first:
-            # Get sensor data
-            prev_gyro_data = imu_sensor.get_gyro_data()
-            prev_acc_data = imu_sensor.get_acc_data()
-            prev_alt = imu_sensor.get_altitude()
-            prev_bearing = nav_sensor.get_bearing()
-            
-            first = False
-            continue
-            
-        
-        # Get sensor data
-        gyro_data = imu_sensor.get_gyro_data()
-        acc_data = imu_sensor.get_acc_data()
-        alt = imu_sensor.get_altitude()
-        bearing = nav_sensor.get_bearing()
-        
-        # Calculations
-        #   * velocity
-        vel = calc_module.estimate_velocity(prev_gyro_data=prev_gyro_data, prev_acc_data=prev_acc_data, act_acc_data=acc_data)
-        #   * GPS position
-        # act_pos = calc_module.calculate_position(prev_pos=act_pos, prev_alt=prev_alt, act_alt=act_alt, act_vel=vel, bearing=bearing, t=REFRESH_RATE)
-        
-        prev_gyro_data  = gyro_data
-        prev_acc_data   = acc_data
-        prev_alt        = alt
-        
-        if (nav_sensor._marker >= len(nav_sensor._data) / 2):
+        i = i + 1
+        if i >= stp_ind:
             break
         
-        out = f'{round(((nav_sensor._marker / len(nav_sensor._data) / 2) * 100), 7)} %'
-        print(f'Processing... {out}  ', end='\r')
+        out = f'{round((((i - str_ind) / (stp_ind - str_ind)) * 100), 2)} %'
+        print(f'  * Processing:  100 / {out}   ', end='\r')
         
-        # time.sleep(REFRESH_RATE / 1000)
-        
-    print('Processing... Done.')
-        
-        
+    print('  * Processing:  100 / 100 %   ')
+    print(i)
+
+def clean() -> None:
+    print('\nCleaning...')
+    try:
+        del navigator
+    except Exception:
+        pass
+    print('  * Cleaned.\n')
+
 if __name__ == '__main__':
     init()
-    main()
+    try:
+        main()
+        
+    except KeyboardInterrupt:
+        clean()
+        print('-- Manually Interrupted --\n')
+        print('Simulation program ended up with Success.\n')
+        sys.exit(0)
+        
+    except Exception as e:
+        clean()
+        print('-- Unexpected Exception --')
+        print(type(e).__name__)
+        print(e, end='\n\n')
+        print('Simulation program ended up with Failure!\n')
+        sys.exit(1)
+        
+    clean()
+    print('Simulation program ended up with Success.\n')
+    sys.exit(0)

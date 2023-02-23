@@ -1,9 +1,4 @@
-#include <iostream>
-#include <math.h>
-#include <iomanip>
-#include <vector>
-
-using namespace std;
+#include "pos_calc.hpp"
 
 long double startCoordinates[2] = {52.256545, 20.886096};
 long double lastAltitude = 0;
@@ -12,8 +7,6 @@ const double equatorRadius = 6378137;  //[m]
 const double meridianRadius = 6371008; //[m]
 
 class TelemetricReading;
-
-vector<TelemetricReading *> telemetricReadings;
 
 class TelemetricReading
 {
@@ -110,7 +103,7 @@ long double **calculateTranslatedVector(long double **matrixOfTranslation, long 
         for (int j = 0; j < 4; j++)
         {
             tmp += (matrixOfTranslation[i][j] * recentStepVector[i][0]);
-            cerr << "[" << i << "][" << j << "]: " << matrixOfTranslation[i][j] << " * " << recentStepVector[i][0] << " => " << tmp << endl;
+            std::cerr << "[" << i << "][" << j << "]: " << matrixOfTranslation[i][j] << " * " << recentStepVector[i][0] << " => " << tmp << std::endl;
         }
         resultVector[i][0] = tmp;
         tmp = 0;
@@ -124,7 +117,7 @@ int calculateNextStepCoordinates(TelemetricReading *telemetricReadings, long dou
     long double thetaAngleInDeg = telemetricReadings->getThetaAngleHorizontal();
     long double superelevation = lastAltitude - telemetricReadings->getAltitude();
 
-    cerr << "Superelevation: " << superelevation << endl;
+    std::cerr << "Superelevation: " << superelevation << std::endl;
 
     if (superelevation == 0)
     {
@@ -136,7 +129,7 @@ int calculateNextStepCoordinates(TelemetricReading *telemetricReadings, long dou
         reachedDistance = sqrt(pow(2, c) - pow(2, superelevation));
     }
 
-    cerr << "Reached Distance: " << reachedDistance << endl;
+    std::cerr << "Reached Distance: " << reachedDistance << std::endl;
     if (isnan(reachedDistance))
     {
         return 1;
@@ -145,43 +138,49 @@ int calculateNextStepCoordinates(TelemetricReading *telemetricReadings, long dou
     const long double latitudeDivider = ((2 * pi * meridianRadius) / 360) * startCoordinates[0];
     const long double longitudeDivider = ((2 * pi * equatorRadius) / 360) * ((90 - startCoordinates[0]) / 90) * startCoordinates[1];
 
-    cerr << "LatDivider: " << latitudeDivider << endl;
-    cerr << "LonDivider: " << longitudeDivider << endl;
+    std::cerr << "LatDivider: " << latitudeDivider << std::endl;
+    std::cerr << "LonDivider: " << longitudeDivider << std::endl;
 
     long double distance1 = reachedDistance / latitudeDivider;
     long double distance2 = (reachedDistance / longitudeDivider) * 0.72;
 
-    cerr << "Distance 1: " << distance1 << endl;
-    cerr << "Distance 2: " << distance2 << endl;
+    std::cerr << "Distance 1: " << distance1 << std::endl;
+    std::cerr << "Distance 2: " << distance2 << std::endl;
 
     long double thetaAngleInRad = (thetaAngleInDeg * pi) / 180;
     long double latitudeTranslation = cos(thetaAngleInRad) * distance1;
     long double longitudeTranslation = sin(thetaAngleInRad) * distance2;
 
-    cerr << "LatTranslation: " << latitudeTranslation << endl;
-    cerr << "LonTranslation: " << longitudeTranslation << endl
-         << endl;
+    std::cerr << "LatTranslation: " << latitudeTranslation << std::endl;
+    std::cerr << "LonTranslation: " << longitudeTranslation << std::endl
+         << std::endl;
 
     long double **matrixOfTranslation = generateMatrixOfTranslation(latitudeTranslation, longitudeTranslation);
     long double **recentStepVector = generateRecentStepVector(startCoordinates[0], startCoordinates[1]);
     long double **resultVector = calculateTranslatedVector(matrixOfTranslation, recentStepVector);
 
-    cerr << endl
-         << "[" << resultVector[0][0] << ", " << resultVector[1][0] << ", " << resultVector[2][0] << ", " << resultVector[3][0] << "]" << endl
-         << endl;
+    std::cerr << std::endl
+         << "[" << resultVector[0][0] << ", " << resultVector[1][0] << ", " << resultVector[2][0] << ", " << resultVector[3][0] << "]" << std::endl
+         << std::endl;
 
-    cout << resultVector[0][0] << ",";
-    cout << resultVector[1][0] << endl;
+    std::cout << resultVector[0][0] << ",";
+    std::cout << resultVector[1][0] << std::endl;
 
     return 0;
 }
 
-
+/*
+    ARGS:
+        1           2           3           4
+        lat         lon         prev_alt    alt
+        5           6           7
+        vel         bear        time
+*/
 int main(int argc, char **argv)
 {
     if (argc != 8)
     {
-        cout << "Bad parameters!" << endl;
+        std::cout << "Bad parameters!" << std::endl;
         return 1;
     }
     TelemetricReading *telemetricReading = new TelemetricReading(atof(argv[4]), atof(argv[6]), atof(argv[5]));
@@ -190,8 +189,8 @@ int main(int argc, char **argv)
     lastAltitude = atof(argv[3]);
     long double time = atof(argv[7]);
 
-    cout << setprecision(18);
-    cerr << setprecision(18);
+    std::cout << std::setprecision(18);
+    std::cerr << std::setprecision(18);
 
     return calculateNextStepCoordinates(telemetricReading, time);
 }

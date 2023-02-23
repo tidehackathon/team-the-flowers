@@ -21,7 +21,7 @@ private:
     double pi;
 
 public:
-    MagdwickFilter();
+    MagdwickFilter(double q0, double q1, double q2, double q3);
 
     /*
      * This method is performing single iteration of filter:

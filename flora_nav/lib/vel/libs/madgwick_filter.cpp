@@ -2,7 +2,7 @@
 
 /* *** PUBLIC *** */
 // Constructor
-MagdwickFilter::MagdwickFilter()
+MagdwickFilter::MagdwickFilter(double q0, double q1, double q2, double q3)
 {
     this->sampleFrequency = 10.0;
     this->betaDef = 0.5;
