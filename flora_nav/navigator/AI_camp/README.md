@@ -10,7 +10,7 @@ download github repo
 
 Change dir to api workdir
 
-    cd ./ScamShield/api
+    cd ./team-the-flowers
 
 install virtual enviroment python module
 
