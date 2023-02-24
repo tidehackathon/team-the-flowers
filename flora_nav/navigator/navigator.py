@@ -40,28 +40,49 @@ class Navigator:
         self._vel = 0.0
         self._i = 0
         self._gps_shot = False
+        self._tmp_gps_hold = 12
     
     def __del__(self) -> None:
         del self._compute_module
         
-        
-    def update(self) -> None:
+
+    def update(self, zone = False) -> None:
+        # Sensors real time work simulation
         self._imu.update()
         self._nav.update()
         self._gps.update()
+        self._win.update()
         
+        # === GPS SCENARIOS HANDLE ===
+        if zone:
+            # UAV is in friendly zone [GPS : ONLINE]
+            self._gps.link_status = True
+            self._act_pos = self._gps.get_position()
+            return
+        else:
+            # UAV is in hostile zone [GPS : OFFLINE]
+            self._gps.link_status = False
+            
         if self._i % (self._gps_check_interval * 100) == 0:
             self._gps_shot = True
         
-        if self._gps_shot:
-            self._gps.link_status = randomize_gps_module_link_status(self._gps_off)
-            if self._gps.is_online():
-                self._act_pos = self._gps.get_position()
-                self._gps_shot = False
-                
-                self._i = self._i + 1
-                return
-                
+        # Maintain gps signal to apropriate scenario's visualization
+        if self._tmp_gps_hold < 12:
+            self._gps.link_status = True
+            self._tmp_gps_hold = self._tmp_gps_hold + 1
+        else:
+            # Try to establish GPS connection
+            if self._gps_shot:
+                self._gps.link_status = randomize_gps_module_link_status(self._gps_off)
+                if self._gps.is_online():
+                    self._act_pos = self._gps.get_position()
+                    self._gps_shot = False
+                    self._tmp_gps_hold = 0
+                    self._i = self._i + 1
+                    return
+            else:
+                self._gps.link_status = False
+
         # Get sensor data
         gyro_data = self._imu.get_gyro_data()
         acc_data = self._imu.get_acc_data()
@@ -93,6 +114,8 @@ class Navigator:
     def get_actual_gps_position(self) -> (tuple[float]):
         return self._act_pos
     
+    def get_gps_status(self) -> bool:
+        return self._gps.is_online()
 
     def _get_initial_gps_pos(self) -> tuple[float]:
         while True:

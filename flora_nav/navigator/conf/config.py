@@ -25,12 +25,15 @@ CALC_VEL_LOG = LOG_DIR + 'calc_vel.log'
 CALC_POS_LOG = LOG_DIR + 'calc_pos.log'
 
 # CSV LOGS
-CALC_VEL_CSV_LOG = CALC_DATA_DIR + 'vel.csv'
-CALC_ACC_CSV_LOG = CALC_DATA_DIR + 'acc.csv'
-CALC_ACC_CMP_CSV_LOG = CALC_DATA_DIR + 'acc_cmp.csv'
-CALC_POS_CSV = CALC_DATA_DIR + 'pos.txt'
+CALC_VEL_CSV_LOG = CALC_DATA_DIR        + 'hybrid\\15-0_00001\\vel.csv'
+CALC_ACC_CSV_LOG = CALC_DATA_DIR        + 'hybrid\\15-0_00001\\acc.csv'
+CALC_ACC_CMP_CSV_LOG = CALC_DATA_DIR    + 'hybrid\\15-0_00001\\acc_cmp.csv'
+CALC_POS_CSV = CALC_DATA_DIR            + 'hybrid\\15-0_00001\\pos.txt'
 
 # GPS SIGNAL STATE FLAGS
-GPS_ALWAYS_OFFLINE = True  # but not for initial position (start position must be got from GPS module)
-GPS_CHECK_INTERVAL = 20  # [s]
+GPS_SCENARIO_OFFLINE = False
+GPS_SCENARIO_HYBRID = True
+GPS_SCENARIO_ZONE = False
+
+GPS_CHECK_INTERVAL = 15  # [s]
 GPS_LINK_STATUS_POSSIBILITY_RATE = 0.00001 # percentage value of possibility that GPS would be enable in that moment

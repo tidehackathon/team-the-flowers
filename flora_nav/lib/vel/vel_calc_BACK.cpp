@@ -6,7 +6,14 @@ double calculateVel(double a)
 }
 
 double compensateWindForce(double airVelocity, double w_speed, double w_direction, double bearing)
-{  
+{
+    // double alpha = 1 / sin((w_speed / airVelocity) * sin(w_direction - bearing));
+    // return sqrt(pow(2, airVelocity) + pow(2, w_speed) - (2 * airVelocity * w_speed * cos(bearing) - w_direction + alpha + 90));
+    // return sqrt(pow(2, airVelocity * cos(w_direction)) + pow(2, w_speed * sin(w_direction)));
+    
+    /* *** Angle between bearing and wind direction *** */
+    double alpha = w_direction - 90 - bearing;
+
     /* *** Angles normalization *** */
     while(bearing < 0)
         bearing += 360;
@@ -14,30 +21,24 @@ double compensateWindForce(double airVelocity, double w_speed, double w_directio
     while(w_direction < 0)
         w_direction += 360;
 
-    /* *** Angle between bearing and wind direction *** */
-    double alpha = w_direction - 90 - bearing;
-
-    /* *** Alpha angle normalization *** */
     while(alpha < 0)
         alpha += 360;
 
-    std::cerr << "alpha = " << alpha << ", w_d = " << w_direction << ", bear = " << bearing << ", ";
-
     /* *** Alpha tolerance to increase possibility of recognition perpedicular and parallel vectors *** */
     int drift = 10; // [degrees]
-    if (alpha <= drift)
+    if ((alpha >= ((360 - drift) * (-1))) && (alpha <= drift))
         alpha = 0;
 
-    else if ((alpha >= (90 - drift)) && (alpha <= (90 + drift)))
+    if ((alpha >= ((drift + 90) * (-1))) && (alpha <= (drift + 90)))
         alpha = 90;
 
-    else if ((alpha >= (180 - drift)) && (alpha <= (180 + drift)))
+    if (alpha >= ((drift + 180) * (-1)) && (alpha <= (drift + 180)))
         alpha = 180;
 
-    else if ((alpha >= (270 - drift)) && (alpha <= (270 + drift)))
+    if ((alpha >= ((drift + 270) * (-1))) && (alpha <= (drift + 270)))
         alpha = 270;
 
-    std::cerr << "alpha' = " << alpha << std::endl;
+    std::cerr << "alpha = " << alpha << ", w_d = " << w_direction << ", bear = " << bearing << std::endl;
 
     //  If UAV and Wind vectors are perpendicular
     if ((alpha == 90) || (alpha == 270))
@@ -57,26 +58,21 @@ double compensateWindForce(double airVelocity, double w_speed, double w_directio
         //  If vectors' directions are opposite
         if(std::round(alpha) == 180)
         {
-            std::cerr << "Opposite" << std::endl;
+            std::cerr << "Opposite";
 
-            return airVelocity - w_speed;
+            return (((airVelocity + w_speed) / 2) * 1.25);
         }
         //  If vectors' directions match
         else if (std::round(alpha) == 0) {
-            std::cerr << "Match" << std::endl;
-            return airVelocity + w_speed;
+            std::cerr << "Match";
+            return (((airVelocity - w_speed) / 2) * 1.25);
         }
+        std::cerr << std::endl;
     }
 
     std::cerr << "== Another ==" << std::endl;
 
-    vectorProduct /= 4;
-
-    if (vectorProduct > airVelocity)
-        vectorProduct *= 0.38;
-    else
-        vectorProduct *= 1.12;
-
+    vectorProduct /= 2.5;
     return airVelocity;
 }
 
